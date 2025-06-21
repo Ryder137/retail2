@@ -1,0 +1,206 @@
+{% extends "base.html" %} {% block title %}Add User - Retail Inventory System{%
+endblock %} {% block content %}
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      <i class="bi bi-person-plus"></i> Add New User
+    </h1>
+    <p class="text-gray-600">
+      Create a new user account for the inventory system
+    </p>
+  </div>
+
+  <!-- Add User Form -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <form method="POST" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label
+            for="username"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >Username *</label
+          >
+          <input
+            type="text"
+            id="username"
+            name="username"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter username"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Username must be unique and will be used for login
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="password"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >Password *</label
+          >
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            minlength="6"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter password"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Password must be at least 6 characters long
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="role" class="block text-sm font-medium text-gray-700 mb-2"
+            >Role *</label
+          >
+          <select
+            id="role"
+            name="role"
+            required
+            onchange="toggleBranchField()"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select Role</option>
+            <option value="owner">Owner</option>
+            <option value="manager">Manager</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+
+        <div id="branchField">
+          <label
+            for="branch_id"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >Assigned Branch</label
+          >
+          <select
+            id="branch_id"
+            name="branch_id"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">No specific branch (All branches)</option>
+            {% for branch in branches %}
+            <option value="{{ branch.id }}">
+              {{ branch.name }} - {{ branch.location }}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="text-xs text-gray-500 mt-1">
+            Leave empty for owners to access all branches
+          </p>
+        </div>
+      </div>
+
+      <!-- Role Information -->
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-gray-900 mb-2">Role Permissions</h3>
+        <div id="roleInfo" class="text-sm text-gray-600">
+          Select a role to see its permissions and responsibilities.
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-3">
+        <a
+          href="{{ url_for('users') }}"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
+        >
+          Cancel
+        </a>
+        <button
+          type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+        >
+          <i class="bi bi-person-plus"></i> Create User
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleBranchField() {
+    const role = document.getElementById("role").value;
+    const branchField = document.getElementById("branchField");
+    const branchSelect = document.getElementById("branch_id");
+    const roleInfo = document.getElementById("roleInfo");
+
+    // Role information
+    const roleDescriptions = {
+      owner: {
+        description:
+          "Full system access including user management, all branch access, complete reports & analytics, and transfer approval authority.",
+        branchRequired: false,
+      },
+      manager: {
+        description:
+          "Branch management capabilities including inventory control, transfer approval, branch reports, and staff oversight for assigned branch.",
+        branchRequired: true,
+      },
+      staff: {
+        description:
+          "Basic operations including viewing inventory, updating stock levels, requesting transfers, and branch-specific access only.",
+        branchRequired: true,
+      },
+    };
+
+    if (role && roleDescriptions[role]) {
+      roleInfo.textContent = roleDescriptions[role].description;
+
+      if (roleDescriptions[role].branchRequired) {
+        branchSelect.required = true;
+        branchField.querySelector("label").innerHTML = "Assigned Branch *";
+      } else {
+        branchSelect.required = false;
+        branchSelect.value = "";
+        branchField.querySelector("label").innerHTML = "Assigned Branch";
+      }
+    } else {
+      roleInfo.textContent =
+        "Select a role to see its permissions and responsibilities.";
+      branchSelect.required = false;
+    }
+  }
+
+  // Form validation
+  document.querySelector("form").addEventListener("submit", function (e) {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
+
+    if (username.length < 3) {
+      alert("Username must be at least 3 characters long");
+      e.preventDefault();
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long");
+      e.preventDefault();
+      return;
+    }
+
+    if (!role) {
+      alert("Please select a role");
+      e.preventDefault();
+      return;
+    }
+
+    // Check if branch is required for the selected role
+    if (
+      (role === "manager" || role === "staff") &&
+      !document.getElementById("branch_id").value
+    ) {
+      alert("Branch assignment is required for " + role + " role");
+      e.preventDefault();
+      return;
+    }
+  });
+</script>
+{% endblock %}

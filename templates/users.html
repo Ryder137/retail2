@@ -1,0 +1,188 @@
+{% extends "base.html" %} {% block title %}Users - Retail Inventory System{%
+endblock %} {% block content %}
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          <i class="bi bi-people"></i> User Management
+        </h1>
+        <p class="text-gray-600">
+          Manage system users and their access permissions
+        </p>
+      </div>
+      <a
+        href="{{ url_for('add_user') }}"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        <i class="bi bi-plus"></i> Add New User
+      </a>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-medium text-gray-900">System Users</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Username
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Role
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Assigned Branch
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Created Date
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for user in users %}
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10">
+                  <div
+                    class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center"
+                  >
+                    <i class="bi bi-person text-blue-600"></i>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">
+                    {{ user.username }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              {% if user.role == 'owner' %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800"
+              >
+                <i class="bi bi-crown mr-1"></i> Owner
+              </span>
+              {% elif user.role == 'manager' %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800"
+              >
+                <i class="bi bi-person-badge mr-1"></i> Manager
+              </span>
+              {% elif user.role == 'staff' %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+              >
+                <i class="bi bi-person mr-1"></i> Staff
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {% if user.branch_name %} {{ user.branch_name }} {% else %}
+              <span class="text-gray-400">All Branches</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ user.created_at }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+              >
+                <i class="bi bi-check-circle mr-1"></i> Active
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              {% if user.username != 'admin' %}
+              <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+              <a
+                href="#"
+                class="text-red-600 hover:text-red-900"
+                onclick="return confirm('Are you sure you want to deactivate this user?')"
+              >
+                <i class="bi bi-person-x"></i> Deactivate
+              </a>
+              {% else %}
+              <span class="text-gray-400">System Admin</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Role Descriptions -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Role Permissions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="border border-purple-200 rounded-lg p-4">
+        <h3 class="font-medium text-purple-800 mb-2">
+          <i class="bi bi-crown"></i> Owner
+        </h3>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• Full system access</li>
+          <li>• User management</li>
+          <li>• All branch access</li>
+          <li>• Reports & analytics</li>
+          <li>• Transfer approval</li>
+        </ul>
+      </div>
+
+      <div class="border border-blue-200 rounded-lg p-4">
+        <h3 class="font-medium text-blue-800 mb-2">
+          <i class="bi bi-person-badge"></i> Manager
+        </h3>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• Branch management</li>
+          <li>• Inventory control</li>
+          <li>• Transfer approval</li>
+          <li>• Branch reports</li>
+          <li>• Staff oversight</li>
+        </ul>
+      </div>
+
+      <div class="border border-green-200 rounded-lg p-4">
+        <h3 class="font-medium text-green-800 mb-2">
+          <i class="bi bi-person"></i> Staff
+        </h3>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• View inventory</li>
+          <li>• Update stock levels</li>
+          <li>• Request transfers</li>
+          <li>• Branch-specific access</li>
+          <li>• Basic reporting</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

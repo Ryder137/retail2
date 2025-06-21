@@ -1,0 +1,467 @@
+{% extends "base.html" %} {% block title %}Inventory - Retail Inventory System{%
+endblock %} {% block content %}
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          <i class="bi bi-boxes"></i> Inventory Management
+        </h1>
+        <p class="text-gray-600">
+          Monitor and update stock levels across all branches
+        </p>
+      </div>
+      {% if session.role in ['owner', 'manager'] %}
+      <a
+        href="{{ url_for('add_item') }}"
+        class="text-white px-4 py-2 rounded-lg transition-colors duration-200"
+        style="background-color: #e2373f"
+        onmouseover="this.style.backgroundColor='#C21E25'"
+        onmouseout="this.style.backgroundColor='#E2373F'"
+      >
+        <i class="bi bi-plus"></i> Add New Item
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Filter by Branch</label
+        >
+        <select
+          id="branchFilter"
+          class="w-full border border-gray-300 rounded-md px-3 py-2"
+        >
+          <option value="">All Branches</option>
+          {% for branch in branches %}
+          <option value="{{ branch.id }}">{{ branch.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Search Items</label
+        >
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by item name..."
+          class="w-full border border-gray-300 rounded-md px-3 py-2"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Stock Status</label
+        >
+        <select
+          id="stockFilter"
+          class="w-full border border-gray-300 rounded-md px-3 py-2"
+        >
+          <option value="">All Items</option>
+          <option value="low">Low Stock Only</option>
+          <option value="normal">Normal Stock</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Table -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-medium text-gray-900">Current Inventory</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Item
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Branch
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Category
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Current Stock
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Min Level
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          class="bg-white divide-y divide-gray-200"
+          id="inventoryTableBody"
+        >
+          {% for item in inventory_items %}
+          <tr
+            class="inventory-row"
+            data-branch="{{ item.branch_id }}"
+            data-name="{{ item.name.lower() }}"
+          >
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div>
+                <div class="text-sm font-medium text-gray-900">
+                  {{ item.name }}
+                </div>
+                <div class="text-sm text-gray-500">{{ item.description }}</div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ item.branch_name }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ item.category }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">
+                {{ item.quantity }} {{ item.unit }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ item.min_stock_level }} {{ item.unit }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              {% if item.quantity <= item.min_stock_level %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+              >
+                <i class="bi bi-exclamation-triangle mr-1"></i> Low Stock
+              </span>
+              {% else %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+              >
+                <i class="bi bi-check-circle mr-1"></i> Normal
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex space-x-2">
+                {% if session.role in ['owner', 'manager'] or (session.branch_id
+                and item.branch_id == session.branch_id) %}
+                <button
+                  data-inventory-id="{{ item.id }}"
+                  data-item-name="{{ item.name }}"
+                  data-quantity="{{ item.quantity }}"
+                  data-unit="{{ item.unit }}"
+                  onclick="openUpdateModal(this)"
+                  class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded transition-colors"
+                  title="Update Stock"
+                >
+                  <i class="bi bi-pencil"></i> Update
+                </button>
+                <button
+                  onclick="confirmDeleteInventory('{{ item.id }}', '{{ item.name }}', '{{ item.branch_name }}', '{{ item.quantity }}', '{{ item.unit }}')"
+                  class="text-red-600 hover:text-red-900 px-2 py-1 rounded transition-colors"
+                  title="Delete Inventory Record"
+                >
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+                {% endif %}
+                <a
+                  href="{{ url_for('request_transfer') }}?item={{ item.item_id }}&from={{ item.branch_id }}"
+                  class="text-green-600 hover:text-green-900 px-2 py-1 rounded transition-colors"
+                  title="Transfer Stock"
+                >
+                  <i class="bi bi-arrow-right"></i> Transfer
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Update Stock</h3>
+      <form id="updateForm" method="POST">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >Item</label
+          >
+          <p id="modalItemName" class="text-sm text-gray-900"></p>
+        </div>
+        <div class="mb-4">
+          <label
+            for="modalQuantity"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >New Quantity</label
+          >
+          <div class="flex">
+            <input
+              type="number"
+              id="modalQuantity"
+              name="quantity"
+              required
+              class="flex-1 border border-gray-300 rounded-l-md px-3 py-2"
+            />
+            <span
+              id="modalUnit"
+              class="bg-gray-50 border border-l-0 border-gray-300 rounded-r-md px-3 py-2 text-sm text-gray-500"
+            ></span>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            onclick="closeUpdateModal()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Update Stock
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div
+  id="deleteInventoryModal"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden"
+>
+  <div
+    class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+  >
+    <div class="mt-3 text-center">
+      <div
+        class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100"
+      >
+        <i class="bi bi-exclamation-triangle text-red-600 text-xl"></i>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mt-4">
+        Delete Inventory Record
+      </h3>
+      <div class="mt-2 px-7 py-3">
+        <p class="text-sm text-gray-500">
+          Are you sure you want to delete the inventory record for "<span
+            id="deleteItemName"
+            class="font-medium"
+          ></span
+          >" at "<span id="deleteBranchName" class="font-medium"></span>"?
+        </p>
+        <p class="text-xs text-gray-400 mt-2">
+          Current stock: <span id="deleteQuantity" class="font-medium"></span>
+          <span id="deleteUnit"></span>
+        </p>
+        <p class="text-xs text-red-500 mt-2">
+          This action cannot be undone and will remove this inventory record
+          permanently.
+        </p>
+      </div>
+      <div class="items-center px-4 py-3">
+        <div class="flex space-x-3">
+          <button
+            id="confirmDeleteInventoryBtn"
+            class="px-4 py-2 text-white text-base font-medium rounded-md w-full shadow-sm transition-colors duration-200"
+            style="background-color: #e2373f"
+            onmouseover="this.style.backgroundColor='#C21E25'"
+            onmouseout="this.style.backgroundColor='#E2373F'"
+          >
+            <i class="bi bi-trash"></i> Delete
+          </button>
+          <button
+            id="cancelDeleteInventoryBtn"
+            class="px-4 py-2 bg-gray-300 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 transition-colors duration-200"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentInventoryId = null;
+  let inventoryToDelete = null;
+
+  function openUpdateModal(button) {
+    const inventoryId = button.dataset.inventoryId;
+    const itemName = button.dataset.itemName;
+    const currentQty = button.dataset.quantity;
+    const unit = button.dataset.unit;
+
+    currentInventoryId = inventoryId;
+    document.getElementById("modalItemName").textContent = itemName;
+    document.getElementById("modalQuantity").value = currentQty;
+    document.getElementById("modalUnit").textContent = unit;
+    document.getElementById("updateForm").action =
+      "/update_stock/" + inventoryId;
+    document.getElementById("updateModal").classList.remove("hidden");
+  }
+
+  function closeUpdateModal() {
+    document.getElementById("updateModal").classList.add("hidden");
+    currentInventoryId = null;
+  }
+
+  function confirmDeleteInventory(
+    inventoryId,
+    itemName,
+    branchName,
+    quantity,
+    unit
+  ) {
+    inventoryToDelete = inventoryId;
+    document.getElementById("deleteItemName").textContent = itemName;
+    document.getElementById("deleteBranchName").textContent = branchName;
+    document.getElementById("deleteQuantity").textContent = quantity;
+    document.getElementById("deleteUnit").textContent = unit;
+    document.getElementById("deleteInventoryModal").classList.remove("hidden");
+  }
+
+  function closeDeleteInventoryModal() {
+    document.getElementById("deleteInventoryModal").classList.add("hidden");
+    inventoryToDelete = null;
+  }
+
+  function deleteInventoryRecord() {
+    if (inventoryToDelete) {
+      // Create a form and submit it to delete the inventory record
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/delete_inventory/${inventoryToDelete}`;
+
+      // Add CSRF token if needed
+      const csrfInput = document.createElement("input");
+      csrfInput.type = "hidden";
+      csrfInput.name = "_method";
+      csrfInput.value = "DELETE";
+      form.appendChild(csrfInput);
+
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+  // Filter functionality
+  document
+    .getElementById("branchFilter")
+    .addEventListener("change", filterTable);
+  document.getElementById("searchInput").addEventListener("input", filterTable);
+  document
+    .getElementById("stockFilter")
+    .addEventListener("change", filterTable);
+
+  function filterTable() {
+    const branchFilter = document.getElementById("branchFilter").value;
+    const searchFilter = document
+      .getElementById("searchInput")
+      .value.toLowerCase();
+    const stockFilter = document.getElementById("stockFilter").value;
+    const rows = document.querySelectorAll(".inventory-row");
+
+    rows.forEach((row) => {
+      let showRow = true;
+
+      // Branch filter
+      if (branchFilter && row.dataset.branch !== branchFilter) {
+        showRow = false;
+      }
+
+      // Search filter
+      if (searchFilter && !row.dataset.name.includes(searchFilter)) {
+        showRow = false;
+      }
+
+      // Stock filter
+      if (stockFilter) {
+        const statusElement = row.querySelector("span");
+        const isLowStock = statusElement.textContent.includes("Low Stock");
+        if (stockFilter === "low" && !isLowStock) {
+          showRow = false;
+        } else if (stockFilter === "normal" && isLowStock) {
+          showRow = false;
+        }
+      }
+
+      row.style.display = showRow ? "" : "none";
+    });
+  }
+
+  // Event listeners for delete modal
+  document
+    .getElementById("confirmDeleteInventoryBtn")
+    .addEventListener("click", deleteInventoryRecord);
+  document
+    .getElementById("cancelDeleteInventoryBtn")
+    .addEventListener("click", closeDeleteInventoryModal);
+
+  // Close modal when clicking outside
+  document
+    .getElementById("updateModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeUpdateModal();
+      }
+    });
+
+  // Close delete modal when clicking outside
+  document
+    .getElementById("deleteInventoryModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeDeleteInventoryModal();
+      }
+    });
+
+  // Close modals with Escape key
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (
+        !document.getElementById("updateModal").classList.contains("hidden")
+      ) {
+        closeUpdateModal();
+      }
+      if (
+        !document
+          .getElementById("deleteInventoryModal")
+          .classList.contains("hidden")
+      ) {
+        closeDeleteInventoryModal();
+      }
+    }
+  });
+</script>
+{% endblock %}

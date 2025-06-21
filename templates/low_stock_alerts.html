@@ -1,0 +1,265 @@
+{% extends "base.html" %} {% block title %}Low Stock Alerts - Retail Inventory
+System{% endblock %} {% block content %}
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      <i class="bi bi-exclamation-triangle text-red-500"></i> Low Stock Alerts
+    </h1>
+    <p class="text-gray-600">
+      Items that have reached or fallen below their minimum stock levels
+    </p>
+  </div>
+
+  {% if low_stock_items %}
+  <!-- Alert Summary -->
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <i class="bi bi-exclamation-triangle text-red-400 text-xl"></i>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-red-800">
+          {{ low_stock_items|length }} items require immediate attention
+        </h3>
+        <div class="mt-2 text-sm text-red-700">
+          <p>
+            Please review and restock these items to maintain optimal inventory
+            levels.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Items Table -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-medium text-gray-900">
+        Items Below Minimum Stock Level
+      </h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Priority
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Item
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Branch
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Category
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Current Stock
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Min Level
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Shortage
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for item in low_stock_items %}
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap">
+              {% set shortage_ratio = (item.min_stock_level - item.quantity) /
+              item.min_stock_level %} {% if shortage_ratio >= 0.8 %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+              >
+                <i class="bi bi-exclamation-triangle mr-1"></i> Critical
+              </span>
+              {% elif shortage_ratio >= 0.5 %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800"
+              >
+                <i class="bi bi-exclamation-circle mr-1"></i> High
+              </span>
+              {% else %}
+              <span
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800"
+              >
+                <i class="bi bi-info-circle mr-1"></i> Medium
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div>
+                <div class="text-sm font-medium text-gray-900">
+                  {{ item.name }}
+                </div>
+                <div class="text-sm text-gray-500">{{ item.description }}</div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ item.branch_name }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ item.category }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-red-600">
+                {{ item.quantity }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ item.min_stock_level }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-red-600">
+                {% set shortage = item.min_stock_level - item.quantity %} {% if
+                shortage > 0 %}{{ shortage }}{% else %}0{% endif %}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex space-x-2">
+                {% if session.role in ['owner', 'manager'] or (session.branch_id
+                and item.branch_id == session.branch_id) %}
+                <button
+                  data-inventory-id="{{ item.id }}"
+                  data-item-name="{{ item.name }}"
+                  data-quantity="{{ item.quantity }}"
+                  data-unit=""
+                  onclick="openUpdateModal(this)"
+                  class="text-blue-600 hover:text-blue-900"
+                >
+                  <i class="bi bi-pencil"></i> Update Stock
+                </button>
+                {% endif %}
+                <a
+                  href="{{ url_for('request_transfer') }}?item={{ item.item_id }}&to={{ item.branch_id }}"
+                  class="text-green-600 hover:text-green-900"
+                >
+                  <i class="bi bi-arrow-right"></i> Request Transfer
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <!-- No Low Stock Items -->
+  <div class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+    <div
+      class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100"
+    >
+      <i class="bi bi-check-circle text-green-600 text-xl"></i>
+    </div>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">
+      All Stock Levels Are Healthy
+    </h3>
+    <p class="mt-1 text-sm text-gray-500">
+      No items have fallen below their minimum stock levels. Great job
+      maintaining inventory!
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Update Stock Modal (reused from inventory.html) -->
+<div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Update Stock</h3>
+      <form id="updateForm" method="POST">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >Item</label
+          >
+          <p id="modalItemName" class="text-sm text-gray-900"></p>
+        </div>
+        <div class="mb-4">
+          <label
+            for="modalQuantity"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >New Quantity</label
+          >
+          <input
+            type="number"
+            id="modalQuantity"
+            name="quantity"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2"
+          />
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            onclick="closeUpdateModal()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Update Stock
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentInventoryId = null;
+
+  function openUpdateModal(button) {
+    const inventoryId = button.dataset.inventoryId;
+    const itemName = button.dataset.itemName;
+    const currentQty = button.dataset.quantity;
+
+    currentInventoryId = inventoryId;
+    document.getElementById("modalItemName").textContent = itemName;
+    document.getElementById("modalQuantity").value = currentQty;
+    document.getElementById("updateForm").action =
+      "/update_stock/" + inventoryId;
+    document.getElementById("updateModal").classList.remove("hidden");
+  }
+
+  function closeUpdateModal() {
+    document.getElementById("updateModal").classList.add("hidden");
+    currentInventoryId = null;
+  }
+
+  // Close modal when clicking outside
+  document
+    .getElementById("updateModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeUpdateModal();
+      }
+    });
+</script>
+{% endblock %}
